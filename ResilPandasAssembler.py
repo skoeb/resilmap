@@ -143,8 +143,8 @@ class PandasAssembler(object):
         
         Cshp['resil_ind'] = round(Cshp['resil_ind'],2)
         Cshp['lmi_burd'] = round(Cshp['lmi_burd'],1)
-        Cshp['rev'] = round(Cshp['rev'])
-        Cshp['total_FEMA_spend'] = round(Cshp['total_FEMA_spend'])
+        Cshp['rev'] = Cshp['rev'].astype(int)
+        Cshp['total_FEMA_spend'] = Cshp['total_FEMA_spend'].astype(int)
         
         self.Cshp = Cshp
         
@@ -225,6 +225,9 @@ class PandasAssembler(object):
         seaports['lat_long'] = seaports.apply(latlonglister2, axis = 1)
         self.seaports = seaports[['name','lat_long']]
         
+        urbanshp = gpd.read_file('/Users/skoebric/Downloads/ne_10m_urban_areas/ne_10m_urban_areas.shp')
+        urbanshp['inusa'] = urbanshp.apply(pointinpolygonchecker, axis = 1)
+        self.urbanshp = urbanshp.loc[urbanshp['inusa'] == True]
     
     def mapper(self):
         m = folium.Map(location=[39.5, -98.4], zoom_start=5, tiles = 'stamentoner', prefer_canvas = True, world_copy_jump=True, no_wrap=True)
@@ -238,9 +241,9 @@ class PandasAssembler(object):
         FEMA_spend_fg = FeatureGroup(name = 'Total FEMA Spending', show = False)
         ports_fg = FeatureGroup(name = 'Air/Sea Ports', show = False)
         xw_fg = FeatureGroup(name = 'Extreme Weather Susceptibility', show = False)
+        urban_fg = FeatureGroup(name = 'Urban Areas', show = False)
         
-        
-        
+    
         for index, row in self.airports.iterrows():
             airporticon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/579/579268.svg', icon_size = (20,20))
             ports_fg.add_child(folium.map.Marker(location = row['lat_long'], icon=airporticon,
@@ -255,6 +258,10 @@ class PandasAssembler(object):
                                                          f"<b>Name:</b> {row['name']}"))) 
 
         
+        folium.GeoJson(self.urbanshp,
+                       style_function = lambda feature: {
+                                  'fillColor': '#F37748',
+                                  'fillOpacity':0.5}).add_to(urban_fg)
         
         for index, row in self.md_Citiesshp.iterrows():
             med_cities_fg.add_child(folium.Circle(location=row['lat_long'],
@@ -295,8 +302,8 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      f"<b>County Revenue:</b> ${format(row['rev'], ',d')}<br>"
+                      f"<b>FEMA Spending:</b> ${format(row['total_FEMA_spend'], ',d')}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(res_ind_fg)
@@ -314,8 +321,8 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      f"<b>County Revenue:</b> ${format(row['rev'], ',d')}<br>"
+                      f"<b>FEMA Spending:</b> ${format(row['total_FEMA_spend'], ',d')}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(lmi_burd_fg)
@@ -333,8 +340,8 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      f"<b>County Revenue:</b> ${format(row['rev'], ',d')}<br>"
+                      f"<b>FEMA Spending:</b> ${format(row['total_FEMA_spend'], ',d')}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(rev_fg)
@@ -352,8 +359,8 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      f"<b>County Revenue:</b> ${format(row['rev'], ',d')}<br>"
+                      f"<b>FEMA Spending:</b> ${format(row['total_FEMA_spend'], ',d')}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(FEMA_spend_fg)
@@ -369,14 +376,13 @@ class PandasAssembler(object):
                                             
             popup_ = folium.Popup(
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
-                      f"<b>Cyclone Risk:</b> {row['cyclonerisk']}<br>"
-                      f"<b>Drought Risk:</b> {row['droughtrisk']}<br>"
-                      f"<b>Flood Risk:</b> {row['floodrisk']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
+                      f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
+                      f"<b>County Revenue:</b> ${format(row['rev'], ',d')}<br>"
+                      f"<b>FEMA Spending:</b> ${format(row['total_FEMA_spend'], ',d')}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(xw_fg)
-        
 
         m.add_child(res_ind_fg)
         m.add_child(lmi_burd_fg)
@@ -386,7 +392,9 @@ class PandasAssembler(object):
         m.add_child(ports_fg)
         m.add_child(med_cities_fg)
         m.add_child(large_cities_fg)
-    
+        m.add_child(urban_fg)
+        
+        m.keep_in_front(urban_fg)
         m.keep_in_front(large_cities_fg)
         m.add_child(folium.map.LayerControl(collapsed = False, autoZIndex = True))
     
