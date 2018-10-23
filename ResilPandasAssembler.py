@@ -205,7 +205,7 @@ class PandasAssembler(object):
         
         def pointinpolygonchecker(row):
             geom = row['geometry']
-            return self.usa.geometry.contains(geom)
+            return self.usa.geometry.intersects(geom)
         def latlonglister2(row):
             geom = str(row['geometry'])
             geom = geom.replace('POINT (','').replace(')','')
