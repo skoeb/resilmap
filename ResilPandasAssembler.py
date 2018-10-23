@@ -261,7 +261,10 @@ class PandasAssembler(object):
         folium.GeoJson(self.urbanshp,
                        style_function = lambda feature: {
                                   'fillColor': '#F37748',
-                                  'fillOpacity':0.5}).add_to(urban_fg)
+                                  'fillOpacity':0.5,
+                                  'color': '#F37748',
+                                  'opacity':0.5,
+                                  'weight':0.1}).add_to(urban_fg)
         
         for index, row in self.md_Citiesshp.iterrows():
             med_cities_fg.add_child(folium.Circle(location=row['lat_long'],
