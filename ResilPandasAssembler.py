@@ -68,20 +68,65 @@ class PandasAssembler(object):
             ResilInd = float(matches['res_ind'])
             LMIburd = float(matches['energy_burden_lmi'])
             AirSea = float(matches['air_sea'])
-            RevCap = float(matches['rev_per_cap'])
-            FEMAspend = float(matches['FEMA_spend'])
+            RevCap = float(matches['rev'])
+            FEMAspend = float(matches['total_FEMA_spend'])
             return ResilInd, LMIburd, AirSea, RevCap, FEMAspend
         
         Countiesshp['tuples'] = Countiesshp.apply(indlooker, axis = 1)
         Countiesshp['resil_ind'] = [i[0] for i in Countiesshp['tuples']]
         Countiesshp['lmi_burd'] = [i[1] for i in Countiesshp['tuples']]
         Countiesshp['air_sea'] = [i[2] for i in Countiesshp['tuples']]
-        Countiesshp['rev_per_cap'] = [i[3] for i in Countiesshp['tuples']]
-        Countiesshp['FEMA_spend'] = [i[4] for i in Countiesshp['tuples']]
+        Countiesshp['rev'] = [i[3] for i in Countiesshp['tuples']]
+        Countiesshp['total_FEMA_spend'] = [i[4] for i in Countiesshp['tuples']]
         
         Countiesshp['air_sea'].fillna(0, inplace = True)
         Countiesshp = Countiesshp.to_crs({'init': 'epsg:4326'})
-        Cshp = Countiesshp[['GEOID','geometry','resil_ind','lmi_burd','rev_per_cap','FEMA_spend']]
+        
+        xwdf = gpd.read_file('/Users/skoebric/Dropbox/Resilience/susceptibility_extreme_weather/susceptibility_extreme_weatherPolygon.shp')
+        xwdf = xwdf.fillna(0)
+        xwdf = xwdf.replace('None', 0)
+        xwdf = xwdf.replace('Low', 1)
+        xwdf = xwdf.replace('Moderate',2)
+        xwdf = xwdf.replace('Medium',3)
+        xwdf = xwdf.replace('High',4)
+        xwdf = xwdf.replace('Extreme',5)
+        xwdf['fip'] = [i[0:5] for i in xwdf['geoid']]
+        
+        xwdf = xwdf[['geoid',
+         'state_abbr',
+         'county_nam',
+         'flood_risk',
+         'cyclone_ri',
+         'drought_ri',
+         'gid',
+         'risk',
+         'fip']]
+        
+        floodlist = []
+        droughtlist = []
+        cyclonelist = []
+        risklist = []
+
+        for fip in Countiesshp.GEOID:
+            df_ = xwdf.loc[xwdf['fip'] == fip]
+            if len(df_) > 0:
+                floodlist.append(round(df_['flood_risk'].mean()))
+                droughtlist.append(round(df_['drought_ri'].mean()))
+                cyclonelist.append(round(df_['cyclone_ri'].mean()))
+                risklist.append(round(df_['risk'].mean()))
+            elif len(df_) == 0:
+                floodlist.append(0)
+                droughtlist.append(0)
+                cyclonelist.append(0)
+                risklist.append(0)
+        
+        Countiesshp['floodrisk'] = floodlist
+        Countiesshp['droughtrisk'] = droughtlist
+        Countiesshp['cyclonerisk'] = cyclonelist
+        Countiesshp['risk'] = risklist
+        
+        Cshp = Countiesshp[['GEOID','geometry','resil_ind','lmi_burd','rev','total_FEMA_spend',
+                            'floodrisk', 'droughtrisk', 'cyclonerisk', 'risk']]
         
         
         def hexcolormapper(df, column, colorscale, quantile = 0.95, clip = False):
@@ -92,13 +137,14 @@ class PandasAssembler(object):
         
         Cshp = hexcolormapper(Cshp, 'resil_ind', plt.cm.Greens, quantile = 0.975)
         Cshp = hexcolormapper(Cshp, 'lmi_burd', plt.cm.Reds, quantile = 0.975)
-        Cshp = hexcolormapper(Cshp, 'rev_per_cap', plt.cm.Blues, quantile = 0.975)
-        Cshp = hexcolormapper(Cshp, 'FEMA_spend', plt.cm.Oranges, quantile = 0.975)
+        Cshp = hexcolormapper(Cshp, 'rev', plt.cm.Blues, quantile = 0.95)
+        Cshp = hexcolormapper(Cshp, 'total_FEMA_spend', plt.cm.Oranges, quantile = 0.95)
+        Cshp = hexcolormapper(Cshp, 'risk', plt.cm.Purples, quantile = 0.975)
         
         Cshp['resil_ind'] = round(Cshp['resil_ind'],2)
         Cshp['lmi_burd'] = round(Cshp['lmi_burd'],1)
-        Cshp['rev_per_cap'] = round(Cshp['rev_per_cap'])
-        Cshp['FEMA_spend'] = round(Cshp['FEMA_spend'])
+        Cshp['rev'] = round(Cshp['rev'])
+        Cshp['total_FEMA_spend'] = round(Cshp['total_FEMA_spend'])
         
         self.Cshp = Cshp
         
@@ -168,12 +214,12 @@ class PandasAssembler(object):
             lat = float(geom[1])
             return [lat, long]
         
-        airports = gpd.read_file('geometry/ne_10m_airports/ne_10m_airports.shp')
+        airports = gpd.read_file('/Users/skoebric/Dropbox/GitHub/resilmap/geometry/ne_10m_airports/ne_10m_airports.shp')
         airports['inusa'] = airports.apply(pointinpolygonchecker, axis = 1)
         airports = airports.loc[airports['inusa'] == True]
         airports['lat_long'] = airports.apply(latlonglister2, axis = 1)
         self.airports = airports[['type','name','lat_long','iata_code']]
-        seaports = gpd.read_file('geometry/ne_10m_ports/ne_10m_ports.shp')
+        seaports = gpd.read_file('/Users/skoebric/Dropbox/GitHub/resilmap/geometry/ne_10m_ports/ne_10m_ports.shp')
         seaports['inusa'] = seaports.apply(pointinpolygonchecker, axis = 1)
         seaports = seaports.loc[seaports['inusa'] == True]
         seaports['lat_long'] = seaports.apply(latlonglister2, axis = 1)
@@ -188,9 +234,10 @@ class PandasAssembler(object):
         large_cities_fg = FeatureGroup(name='Cities Larger than 500,000', show = True)
         res_ind_fg = FeatureGroup(name='Resilience Indicator', show = True)
         lmi_burd_fg = FeatureGroup(name='LMI Energy Buden', show = False)
-        rev_per_cap_fg = FeatureGroup(name = 'Revenue Per Capita', show = False)
-        FEMA_spend_fg = FeatureGroup(name = 'FEMA Spending Per Capita', show = False)
+        rev_fg = FeatureGroup(name = 'County Revenue', show = False)
+        FEMA_spend_fg = FeatureGroup(name = 'Total FEMA Spending', show = False)
         ports_fg = FeatureGroup(name = 'Air/Sea Ports', show = False)
+        xw_fg = FeatureGroup(name = 'Extreme Weather Susceptibility', show = False)
         
         
         
@@ -248,8 +295,8 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev_per_cap']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['FEMA_spend']}<br>"
+                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
+                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(res_ind_fg)
@@ -267,18 +314,18 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev_per_cap']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['FEMA_spend']}<br>"
+                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
+                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(lmi_burd_fg)
             
-        for index, row in self.Cshp.loc[self.Cshp['rev_per_cap'] > 0].iterrows():
+        for index, row in self.Cshp.loc[self.Cshp['rev'] > 0].iterrows():
             geojson_ = folium.GeoJson(self.Cshp.loc[index:index+1],
                               style_function = lambda feature: {
-                                  'fillColor': feature['properties']['rev_per_cap_color'],
+                                  'fillColor': feature['properties']['rev_color'],
                                   'fillOpacity':0.5,
-                                  'color': feature['properties']['rev_per_cap_color'],
+                                  'color': feature['properties']['rev_color'],
                                   'opacity': 0.6,
                                   'weight':0.5}) 
                                             
@@ -286,18 +333,18 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev_per_cap']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['FEMA_spend']}<br>"
+                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
+                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
                       )
             popup_.add_to(geojson_)
-            geojson_.add_to(rev_per_cap_fg)
+            geojson_.add_to(rev_fg)
             
-        for index, row in self.Cshp.loc[self.Cshp['FEMA_spend'] > 0].iterrows():
+        for index, row in self.Cshp.loc[self.Cshp['total_FEMA_spend'] > 0].iterrows():
             geojson_ = folium.GeoJson(self.Cshp.loc[index:index+1],
                               style_function = lambda feature: {
-                                  'fillColor': feature['properties']['FEMA_spend_color'],
+                                  'fillColor': feature['properties']['total_FEMA_spend_color'],
                                   'fillOpacity':0.5,
-                                  'color': feature['properties']['FEMA_spend_color'],
+                                  'color': feature['properties']['total_FEMA_spend_color'],
                                   'opacity': 0.6,
                                   'weight':0.5}) 
                                             
@@ -305,22 +352,42 @@ class PandasAssembler(object):
                       f"<b>County FIP:</b> {row['GEOID']}<br>"
                       f"<b>Resilience Indicator:</b> {row['resil_ind']}<br>"
                       f"<b>LMI Burden:</b> {row['lmi_burd']*100}%<br>"
-                      f"<b>Rev Per Cap:</b> ${row['rev_per_cap']}<br>"
-                      f"<b>FEMA Spending:</b> ${row['FEMA_spend']}<br>"
+                      f"<b>Rev Per Cap:</b> ${row['rev']}<br>"
+                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
                       )
             popup_.add_to(geojson_)
             geojson_.add_to(FEMA_spend_fg)
+            
+        for index, row in self.Cshp.loc[self.Cshp['risk'] > 0].iterrows():
+            geojson_ = folium.GeoJson(self.Cshp.loc[index:index+1],
+                              style_function = lambda feature: {
+                                  'fillColor': feature['properties']['risk_color'],
+                                  'fillOpacity':0.5,
+                                  'color': feature['properties']['risk_color'],
+                                  'opacity': 0.6,
+                                  'weight':0.5}) 
+                                            
+            popup_ = folium.Popup(
+                      f"<b>County FIP:</b> {row['GEOID']}<br>"
+                      f"<b>Cyclone Risk:</b> {row['cyclonerisk']}<br>"
+                      f"<b>Drought Risk:</b> {row['droughtrisk']}<br>"
+                      f"<b>Flood Risk:</b> {row['floodrisk']}<br>"
+                      f"<b>FEMA Spending:</b> ${row['total_FEMA_spend']}<br>"
+                      )
+            popup_.add_to(geojson_)
+            geojson_.add_to(xw_fg)
         
 
         m.add_child(res_ind_fg)
         m.add_child(lmi_burd_fg)
-        m.add_child(rev_per_cap_fg)
+        m.add_child(rev_fg)
         m.add_child(FEMA_spend_fg)
+        m.add_child(xw_fg)
         m.add_child(ports_fg)
         m.add_child(med_cities_fg)
         m.add_child(large_cities_fg)
-        
-        m.keep_in_front(med_cities_fg, large_cities_fg, ports_fg)
+    
+        m.keep_in_front(large_cities_fg)
         m.add_child(folium.map.LayerControl(collapsed = False, autoZIndex = True))
     
         self.html = m
@@ -328,25 +395,3 @@ class PandasAssembler(object):
 
     def saver(self):
         self.html.save('/Users/skoebric/Dropbox/GitHub/resilmap/index.html')
-#%%
-        
-#xwdf = gpd.read_file('/Users/skoebric/Dropbox/Resilience/susceptibility_extreme_weather/susceptibility_extreme_weatherPolygon.shp')
-#for county in set(self.Cshp['GEOID'])
-#xwdf = xwdf.fillna(0)
-#xwdf = xwdf.replace('None', 0)
-#xwdf = xwdf.replace('Low', 1)
-#xwdf = xwdf.replace('Moderate',2)
-#xwdf = xwdf.replace('Medium',3)
-#xwdf = xwdf.replace('High',4)
-#xwdf = xwdf.replace('Extreme',5)
-#
-#xwdf = xwdf[['geoid','flood_risk','cyclone_ri','drought_ri','geometry']]
-#
-#import folium
-#m = folium.Map(location=[48, -102], zoom_start=3, prefer_canvas= True)
-#m.choropleth(geo_data = xwdf, data = xwdf, key_on = 'feature.properties.geoid',
-#            columns = ['geoid','flood_risk'], fill_color='BuGn', line_weight = 0.2, line_opacity = 0.5,
-#            fill_opacity = 0.4, legend_name = 'Flood Risk',
-#            threshold_scale = [0,1,2,3,4,5],
-#            smooth_factor = 100)
-#m.save('/Users/skoebric/Desktop/test.html')
