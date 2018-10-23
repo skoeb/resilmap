@@ -393,11 +393,11 @@ class PandasAssembler(object):
         m.add_child(FEMA_spend_fg)
         m.add_child(xw_fg)
         m.add_child(ports_fg)
+        m.add_child(urban_fg)
         m.add_child(med_cities_fg)
         m.add_child(large_cities_fg)
-        m.add_child(urban_fg)
+
         
-        m.keep_in_front(urban_fg)
         m.keep_in_front(large_cities_fg)
         m.add_child(folium.map.LayerControl(collapsed = False, autoZIndex = True))
     
