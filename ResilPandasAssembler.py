@@ -227,7 +227,7 @@ class PandasAssembler(object):
         
     
     def mapper(self):
-        m = folium.Map(location=[39.5, -98.4], zoom_start=4, tiles = 'stamentoner', prefer_canvas = True, world_copy_jump=True, no_wrap=True)
+        m = folium.Map(location=[39.5, -98.4], zoom_start=5, tiles = 'stamentoner', prefer_canvas = True, world_copy_jump=True, no_wrap=True)
         folium.TileLayer('openstreetmap').add_to(m)
 
         med_cities_fg = FeatureGroup(name='Cities Between 175,000 and 500,000', show = False)
