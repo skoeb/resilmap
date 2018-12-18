@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import geocoder
+import geopandas as gpd
 
 Countiesshpfile = "/Users/skoebric/Dropbox/shp files/cb_2017_us_county_20m/cb_2017_us_county_20m.shp"
 Countiesshp = gpd.read_file(Countiesshpfile)
@@ -61,25 +62,72 @@ def indlooker(row):
     ResilInd = float(matches['res_ind'])
     LMIburd = float(matches['energy_burden_lmi'])
     AirSea = float(matches['air_sea'])
-    RevCap = float(matches['rev_per_cap'])
-    FEMAspend = float(matches['FEMA_spend'])
+    RevCap = float(matches['rev'])
+    FEMAspend = float(matches['total_FEMA_spend'])
     return ResilInd, LMIburd, AirSea, RevCap, FEMAspend
 
 Countiesshp['tuples'] = Countiesshp.apply(indlooker, axis = 1)
 Countiesshp['resil_ind'] = [i[0] for i in Countiesshp['tuples']]
 Countiesshp['lmi_burd'] = [i[1] for i in Countiesshp['tuples']]
 Countiesshp['air_sea'] = [i[2] for i in Countiesshp['tuples']]
-Countiesshp['rev_per_cap'] = [i[3] for i in Countiesshp['tuples']]
-Countiesshp['FEMA_spend'] = [i[4] for i in Countiesshp['tuples']]
+Countiesshp['rev'] = [i[3] for i in Countiesshp['tuples']]
+Countiesshp['total_FEMA_spend'] = [i[4] for i in Countiesshp['tuples']]
 
 Countiesshp['air_sea'].fillna(0, inplace = True)
 Countiesshp = Countiesshp.to_crs({'init': 'epsg:4326'})
-Cshp = Countiesshp[['GEOID','geometry','resil_ind','lmi_burd','rev_per_cap','FEMA_spend']]
+
+xwdf = gpd.read_file('/Users/skoebric/Dropbox/Resilience/susceptibility_extreme_weather/susceptibility_extreme_weatherPolygon.shp')
+xwdf = xwdf.fillna(0)
+xwdf = xwdf.replace('None', 0)
+xwdf = xwdf.replace('Low', 1)
+xwdf = xwdf.replace('Moderate',2)
+xwdf = xwdf.replace('Medium',3)
+xwdf = xwdf.replace('High',4)
+xwdf = xwdf.replace('Extreme',5)
+xwdf['fip'] = [i[0:5] for i in xwdf['geoid']]
+
+xwdf = xwdf[['geoid',
+ 'state_abbr',
+ 'county_nam',
+ 'flood_risk',
+ 'cyclone_ri',
+ 'drought_ri',
+ 'gid',
+ 'risk',
+ 'fip']]
+
+floodlist = []
+droughtlist = []
+cyclonelist = []
+risklist = []
+
+for fip in Countiesshp.GEOID:
+    df_ = xwdf.loc[xwdf['fip'] == fip]
+    if len(df_) > 0:
+        floodlist.append(round(df_['flood_risk'].mean()))
+        droughtlist.append(round(df_['drought_ri'].mean()))
+        cyclonelist.append(round(df_['cyclone_ri'].mean()))
+        risklist.append(round(df_['risk'].mean()))
+    elif len(df_) == 0:
+        floodlist.append(0)
+        droughtlist.append(0)
+        cyclonelist.append(0)
+        risklist.append(0)
+
+Countiesshp['floodrisk'] = floodlist
+Countiesshp['droughtrisk'] = droughtlist
+Countiesshp['cyclonerisk'] = cyclonelist
+Countiesshp['risk'] = risklist
+
+Cshp = Countiesshp[['GEOID','geometry','resil_ind','lmi_burd','rev','total_FEMA_spend',
+                    'floodrisk', 'droughtrisk', 'cyclonerisk', 'risk']]
 #%%
 import multiprocessing
 import geocoder 
 import pandas as pd
 import time
+import requests
+from multiprocessing.dummy import Pool as ThreadPool 
 
 participants = pd.read_excel('/Users/skoebric/Dropbox/GitHub/resilmap/Participant_List.xlsx')
 participants = participants.drop_duplicates(subset = ['City','State'])
@@ -88,39 +136,81 @@ participants = participants.dropna(how = 'any')
 participants['geocoderstring'] = participants['City'] + ' ' + participants['State'] + ' USA'
 
 def geocode_worker(inputrow):
-    print('test')
-    r = geocoder.google(inputrow, key = 'skoebric')
-    print(r)
-    return r.lat, r.lng
-    
-def multiprocessgeocoder(inputlist):
-    multistart = time.time()
-    # Start as many worker processes as you have cores
-    pool = multiprocessing.Pool(processes=1)
-    print(pool)
-    # Apply geocode worker to each address, asynchronously
+    try:
+        r = geocoder.mapquest(inputrow, key = 'rszS6XG8TKX2oHEIiJexOAHiMwdYYxCS')
+        lat = r.lat
+        lng = r.lng
+        print(r)
+    except Exception:
+        lat = None
+        lng = None
+        print('fail')
+    return lat, lng
+
+def multithreadgeocoder(inputlist):
+    start = time.time()
+    pool = ThreadPool(20)
     outputtuples = pool.map(geocode_worker, inputlist)
-    print(outputtuples)
-    
-    multisplit = (time.time() - multistart) / len(inputlist)
-    print(multisplit)
     outputlist = []
     for t in outputtuples:
         try:
-            outputlist.append([float(t[0]),float(t[1])])
+            outputlist.append([float(t[1]),float(t[0])])
         except TypeError:
-            outputlist.append(['failure','failure'])
+            outputlist.append('fail')
+    print(time.time() - start)
     return outputlist
-    
-participants['lat_lng'] = multiprocessgeocoder(list(participants['geocoderstring']))
 
+participants['lat_lng'] = multithreadgeocoder(list(participants['geocoderstring']))
 
 #%%
-
+participants = participants.loc[participants['lat_lng'] != 'fail']
 from shapely.geometry import Point
 import geopandas as gpd
 
 participants['geometry'] = participants['lat_lng'].apply(Point)
 participants = gpd.GeoDataFrame(participants, geometry = 'geometry')
-#def cityincountychecker(row):
+
+def point_in_polygon_worker(inputgeometry):
+    def pointpasser(row):
+        return inputgeometry.contains(row.geometry)
+    allcities = participants.apply(pointpasser, axis = 1)
+    if allcities.sum() == 0:
+        print(False)
+        return False
+    else:
+        print(True)
+        return True
+    
+def cityincountychecker(inputlist):
+    start = time.time()
+    pool = ThreadPool(40)
+    outputlist = pool.map(point_in_polygon_worker, inputlist)
+    print(time.time() - start)
+    return outputlist
+
+Cshp['contains_participant'] = cityincountychecker(list(Cshp['geometry']))
+
+#%%
+plt.cla()
+import seaborn as sns
+#Cshp = Cshp.loc[Cshp['rev'] < Cshp['rev'].quantile(.95)]
+#Cshp = Cshp.loc[Cshp['total_FEMA_spend'] < Cshp['total_FEMA_spend'].quantile(.95)]
+#Cshp = Cshp.loc[Cshp['rev'] > Cshp['rev'].quantile(.05)]
+#Cshp = Cshp.loc[Cshp['total_FEMA_spend'] > Cshp['total_FEMA_spend'].quantile(.05)]
+resilquantile = []
+for r in Cshp['resil_ind']:
+    if r < 0.25:
+        resilquantile.append('1')
+    elif r < 1:
+        resilquantile.append('2')
+    elif r < 1.5:
+        resilquantile.append('3')
+    elif r < 2:
+        resilquantile.append('4')
+    else:
+        resilquantile.append('5')
+
+Cshp['resquant'] = resilquantile
+sns.lmplot(x = 'risk', y = 'total_FEMA_spend', hue = 'resquant', data = Cshp)
+
     

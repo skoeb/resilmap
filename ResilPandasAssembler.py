@@ -228,6 +228,19 @@ class PandasAssembler(object):
         urbanshp = gpd.read_file('/Users/skoebric/Downloads/ne_10m_urban_areas/ne_10m_urban_areas.shp')
         urbanshp['inusa'] = urbanshp.apply(pointinpolygonchecker, axis = 1)
         self.urbanshp = urbanshp.loc[urbanshp['inusa'] == True]
+        
+        def shapely_Point_applier(row):
+            lat = row['lat']
+            long = row['long']
+            return Point(long, lat)
+        
+        NLC_df = pd.read_csv('/Users/skoebric/Dropbox/GitHub/resilmap/NLC_attendees.csv')
+        NLC_df['geometry'] = NLC_df.apply(shapely_Point_applier, axis = 1)
+        NLC_df['lat_long'] = NLC_df.apply(latlonglister, axis = 1)
+        NLC = gpd.GeoDataFrame(NLC_df, geometry = 'geometry')
+        
+        
+        self.NLC = gpd.GeoDataFrame(NLC_df)
     
     def mapper(self):
         m = folium.Map(location=[39.5, -98.4], zoom_start=5, tiles = 'stamentoner', prefer_canvas = True, world_copy_jump=True, no_wrap=True)
@@ -242,6 +255,7 @@ class PandasAssembler(object):
         ports_fg = FeatureGroup(name = 'Air/Sea Ports', show = False)
         xw_fg = FeatureGroup(name = 'Extreme Weather Susceptibility', show = False)
         urban_fg = FeatureGroup(name = 'Urban Areas', show = False)
+        NLC_fg = FeatureGroup(name = 'NLC Participants', show = False)
         
     
         for index, row in self.airports.iterrows():
@@ -256,6 +270,15 @@ class PandasAssembler(object):
                                                  popup = (
                                                          f"<b>Port</b><br>"
                                                          f"<b>Name:</b> {row['name']}"))) 
+            
+        for index, row in self.NLC.iterrows():
+            staricon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/148/148839.svg', icon_size = (15,15))
+            NLC_fg.add_child(folium.map.Marker(location = row['lat_long'], icon = staricon,
+                                               popup = (
+                                                       f"<b>NLC Participant</b><br>"
+                                                       f"<b>Name:</b> {row['City']}<br>"
+                                                       f"<b>Type:</b> {row['Type']}")))
+            
 
         
         folium.GeoJson(self.urbanshp,
@@ -396,6 +419,7 @@ class PandasAssembler(object):
         m.add_child(urban_fg)
         m.add_child(med_cities_fg)
         m.add_child(large_cities_fg)
+        m.add_child(NLC_fg)
 
         
         m.keep_in_front(large_cities_fg)

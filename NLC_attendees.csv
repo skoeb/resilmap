@@ -1,0 +1,107 @@
+Type,City,State,lat,long
+Municipal Association,Montgomery,AL,32.403274,-86.326915
+City,New Orleans,LA,29.92393,-90.102484
+City,Cottage Grove,OR,43.74081,-123.018593
+City,Denton,TX,33.220974,-97.146038
+City,Oberlin,OH,41.289495,-82.231223
+City,Boise,ID,43.680471,-116.160197
+City,Wilson,NC,35.688948,-77.896676
+City,Yountville,CA,38.409878,-122.361511
+Utility,Portland,OR,45.518371,-122.673946
+City,Summit Argo,IL,41.780221,-87.823244
+City,St. Gabriel,LA,30.265844,-91.086139
+NGO,Washington,DC,38.898889,-77.055456
+City,South Sioux City,NE,42.467422,-96.44705
+City,Greenbelt,MD,39.002985,-76.879165
+City,SeaTac,WA,47.446413,-122.272098
+City,Colorado Springs,CO,38.831526,-104.815062
+City,Saint Louis,MO,38.629712,-90.216862
+City,Athens,OH,39.311963,-82.08602
+City,Everett,WA,48.006311,-122.210044
+NGO,Boston,MA,42.357757,-71.064897
+City,Eugene,OR,44.067988,-123.080181
+City,Nashville,TN,36.166808,-86.783192
+City,Huntingburg,IN,38.296585,-86.966599
+Municipal Association,Atlanta,GA,33.661498,-84.386895
+City,Ocean Ridge,FL,26.525162,-80.061506
+City,Springville,AL,33.79507,-86.453279
+City,Gadsden,AL,34.047586,-85.933265
+City,Southside,AL,33.890841,-86.01802
+Utility,Phoenix,AZ,33.462954,-111.985178
+City,Avondale,AZ,33.419233,-112.326866
+City,Glendale,AZ,33.535012,-112.181934
+City,San Luis,AZ,32.508824,-114.743975
+City,Duarte,CA,34.141586,-117.957627
+City,Los Angeles,CA,33.974026,-118.24951
+NGO,Venice,CA,33.993396,-118.465193
+City,Simi Valley,CA,34.308714,-118.687257
+City,Malibu,CA,34.066117,-118.846342
+City,Concord,CA,37.988452,-122.013001
+City,Commerce City,CO,39.879646,-104.798722
+City,Broomfield,CO,39.930782,-105.074287
+City,Castle Pines,CO,39.445521,-104.853006
+Federal,"Washington, DC",DC,38.910353,-77.017739
+City,Wilmington,DE,39.727715,-75.541154
+City,Ocoee,FL,28.578577,-81.534116
+City,Saint Petersburg,FL,27.770793,-82.632806
+City,North Port,FL,27.080871,-82.181256
+City,Gary,IN,41.599334,-87.330662
+City,Maywood,IL,41.879283,-87.843251
+City,Greenwood,IN,39.62181,-86.175319
+City,Anderson,IN,40.097817,-85.681513
+City,Shawnee Mission,KS,39.020426,-94.70585
+City,Salina,KS,38.831832,-97.65455
+City,Derby,KS,37.571832,-97.217235
+City,Merriam,KS,39.020426,-94.70585
+City,Arkansas City,KS,37.065177,-96.995663
+City,Atchison,KS,39.538808,-95.137645
+City,Louisville,KY,38.256783,-85.754048
+City,Louisville,KY,38.151772,-85.780765
+City,Plaquemine,LA,30.216866,-91.282778
+City,Randolph,MA,42.176092,-71.052043
+City,Greenbelt,MD,39.002985,-76.879165
+City,Ellsworth,ME,44.672809,-68.391841
+City,Southfield,MI,42.459322,-83.293205
+City,South Saint Paul,MN,44.888027,-93.040497
+City,Branson,MO,36.669373,-93.248879
+City,Saint Louis,MO,38.611729,-90.321432
+City,Vicksburg,MS,32.224042,-90.857132
+City,Vicksburg,MS,32.224042,-90.857132
+City,Pascagoula,MS,30.222715,-88.513647
+City,Reidsville,NC,36.341643,-79.657526
+City,Sanford,NC,35.514408,-79.195453
+City,Charlotte,NC,35.227271,-80.844194
+City,New Bern,NC,35.126695,-76.977628
+City,Questa,NM,36.785496,-105.479975
+City,Red River,NM,36.640369,-105.42811
+City,Mesilla,NM,32.250022,-106.802272
+City,West Wendover,NV,40.611175,-114.265506
+NGO,New York,NY,40.75863,-73.967949
+City,Riverside,OH,39.763835,-84.084204
+City,Bedford,OH,41.381223,-81.529226
+City,Dayton,OH,39.843573,-84.110504
+City,Cleveland,OH,41.520126,-81.678083
+Municipal Association,Oklahoma City,OK,35.520032,-97.501254
+City,Oklahoma City,OK,35.520032,-97.501254
+City,Jenks,OK,35.998551,-95.97989
+City,Yukon,OK,35.527369,-97.78251
+City,Broken Arrow,OK,36.051418,-95.805731
+City,Hermiston,OR,45.853004,-119.287265
+City,Providence,RI,41.81823,-71.409088
+City,Lexington,SC,34.002137,-81.272827
+City,Lexington,SC,34.002137,-81.272827
+City,Yankton,SD,42.915648,-97.446689
+Municipal Association,Fort Pierre,SD,44.40031,-100.628221
+City,Dallas,TX,32.787758,-96.799425
+City,Houston,TX,29.756845,-95.365652
+City,Desoto,TX,32.599427,-96.864075
+City,Port Arthur,TX,29.881613,-93.940858
+City,Lewisville,TX,33.013546,-97.00016
+City,New Braunfels,TX,29.693556,-98.07285
+Municipal Association,Salt Lake City,UT,40.76025,-111.864386
+City,Bountiful,UT,40.867942,-111.867845
+City,Dumfries,VA,38.560041,-77.296214
+City,Colonial Heights,VA,37.290584,-77.404112
+City,Marysville,WA,48.056723,-122.146904
+City,Redmond,WA,47.68099,-122.120531
+City,Clarksburg,WV,39.301498,-80.393977
