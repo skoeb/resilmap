@@ -257,22 +257,22 @@ class PandasAssembler(object):
         urban_fg = FeatureGroup(name = 'Urban Areas', show = False)
         NLC_fg = FeatureGroup(name = 'NLC Participants', show = False)
         
+        airporticon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/579/579268.svg', icon_size = (20,20))
+        seaporticon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/1198/1198475.svg', icon_size = (20,20))
+        staricon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/148/148839.svg', icon_size = (15,15))
     
         for index, row in self.airports.iterrows():
-            airporticon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/579/579268.svg', icon_size = (20,20))
             ports_fg.add_child(folium.map.Marker(location = row['lat_long'], icon=airporticon,
                                                  popup = (
                                                          f"<b>Airport Code:</b> {row['iata_code']}<br>"
                                                          f"<b>Type:</b> {row['type']}")))
         for index, row in self.seaports.iterrows():
-            seaporticon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/1198/1198475.svg', icon_size = (20,20))
             ports_fg.add_child(folium.map.Marker(location = row['lat_long'], icon=seaporticon,
                                                  popup = (
                                                          f"<b>Port</b><br>"
                                                          f"<b>Name:</b> {row['name']}"))) 
             
         for index, row in self.NLC.iterrows():
-            staricon = folium.features.CustomIcon('https://image.flaticon.com/icons/svg/148/148839.svg', icon_size = (15,15))
             NLC_fg.add_child(folium.map.Marker(location = row['lat_long'], icon = staricon,
                                                popup = (
                                                        f"<b>NLC Participant</b><br>"
